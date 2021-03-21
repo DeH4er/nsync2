@@ -32,7 +32,6 @@ export async function server({
 
   let ignored: any[] = [relative(filepath, '.git')];
   try {
-    console.log(relative(filepath, '.gitignore'));
     ignored = [
       ...ignored,
       ...(await readGitignoreToAnymatch(relative(filepath, '.gitignore'))),
