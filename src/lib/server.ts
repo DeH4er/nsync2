@@ -66,8 +66,12 @@ export async function server({
   });
 
   watcher.on('change', async (path: string, stats: Stats) => {
-    server.sendJson({ action: 'write-file', path });
-    server.sendFile(path, stats.size);
+    if (stats.size === 0) {
+      server.sendJson({ action: 'add-file', path });
+    } else {
+      server.sendJson({ action: 'write-file', path });
+      server.sendFile(path, stats.size);
+    }
   });
 
   watcher.on('unlink', (path: string) => {
