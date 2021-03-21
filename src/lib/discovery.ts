@@ -24,7 +24,6 @@ export class DiscoveryServer {
       this.socket?.addMembership(MCAST_ADDR);
 
       this.discoveryIntervalId = setInterval(() => {
-        console.log(`Send discovery packet`);
         this.socket?.send('', PORT, MCAST_ADDR);
       }, 5000);
     });

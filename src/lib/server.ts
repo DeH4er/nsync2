@@ -7,21 +7,20 @@ import { Readable } from 'stream';
 import { watch } from 'chokidar';
 
 import { DiscoveryServer } from './discovery';
+import { readGitignoreToAnymatch } from './gitignore';
 import { JsonPacket, PacketType } from './packet';
 import { HeaderStream, JsonStream } from './streams';
 
 export async function server({
   filepath,
-  ignored,
   host,
   port,
-  discovery
+  discovery,
 }: {
   filepath: string;
-  ignored?: any;
   host: string;
   port: number;
-  discovery: boolean
+  discovery: boolean;
 }) {
   const server = new Server(host, port);
   server.start();
@@ -31,35 +30,57 @@ export async function server({
     discovery.start();
   }
 
-  const watcher = watch(filepath, { ignored, alwaysStat: true });
+  let ignored: any[] = [relative(filepath, '.git')];
+  try {
+    console.log(relative(filepath, '.gitignore'));
+    ignored = [
+      ...ignored,
+      ...(await readGitignoreToAnymatch(relative(filepath, '.gitignore'))),
+    ];
+    console.log(`Using .gitignore patterns`);
+  } catch (e) {
+    console.log(`Using default ignore patterns`);
+  }
 
-  watcher.on('add', (path: string) => {
-    server.sendJson({ action: 'add-file', path: relative(filepath, path) });
+  console.log(ignored);
+
+  const watcher = watch(filepath, {
+    ignored,
+    cwd: filepath,
+    awaitWriteFinish: {
+      stabilityThreshold: 500,
+      pollInterval: 100,
+    },
+    alwaysStat: true,
   });
 
-  watcher.on('change', (path: string, stats: Stats) => {
-    server.sendJson({ action: 'write-file', path: relative(filepath, path) });
+  await once(watcher, 'ready');
+  console.log('Watcher ready');
+
+  watcher.on('add', (path: string) => {
+    server.sendJson({ action: 'add-file', path });
+  });
+
+  watcher.on('change', async (path: string, stats: Stats) => {
+    server.sendJson({ action: 'write-file', path });
     server.sendFile(path, stats.size);
   });
 
   watcher.on('unlink', (path: string) => {
-    server.sendJson({ action: 'remove-file', path: relative(filepath, path) });
+    server.sendJson({ action: 'remove-file', path });
   });
 
   watcher.on('addDir', (path: string) => {
-    server.sendJson({ action: 'add-dir', path: relative(filepath, path) });
+    server.sendJson({ action: 'add-dir', path });
   });
 
   watcher.on('unlinkDir', (path: string) => {
-    server.sendJson({ action: 'remove-dir', path: relative(filepath, path) });
+    server.sendJson({ action: 'remove-dir', path });
   });
 
   watcher.on('error', (err: Error) => {
     console.log(`Chokidar err: ${err}`);
   });
-
-  await once(watcher, 'ready');
-  console.log('Watcher ready');
 }
 
 export class Server {
@@ -101,6 +122,7 @@ export class Server {
   }
 
   sendJson(json: JsonPacket): void {
+    console.log('Send json', json);
     this.attachStream(this.createJsonStream(json));
   }
 
@@ -109,6 +131,7 @@ export class Server {
   }
 
   sendFile(filepath: string, size: number): void {
+    console.log(`Send file ${size}B ${filepath}`);
     const fileStream = createReadStream(filepath);
     this.sendRaw(fileStream, size);
   }

@@ -7,12 +7,14 @@ export class ActionHandler {
   constructor(private actionHandlers: Record<JsonPacket['action'], Action>) {}
 
   async processJson(data: JsonPacket) {
+    console.log('Got json: ', data);
     this.lastJson = data;
     const action = this.getAction(data.action);
     await action?.processJson(data);
   }
 
   async processRaw(data: Buffer, end: boolean) {
+    console.log(`Got raw: ${data.length}B`);
     if (!this.lastJson) {
       throw new Error('Sending raw data first is not allowed');
     }

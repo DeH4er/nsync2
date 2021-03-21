@@ -41,8 +41,9 @@ export class WriteFileAction extends Action {
       this.writeFileStream.end(data);
       console.log(`File has written ${path}`);
     } else {
-      this.writeFileStream.write(data) ??
-        (await once(this.writeFileStream, 'drain'));
+      if (!this.writeFileStream.write(data)) {
+        await once(this.writeFileStream, 'drain');
+      }
     }
   }
 }
