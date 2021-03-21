@@ -10,6 +10,7 @@ import {
   WriteFileAction,
 } from './actions';
 import { Decoder } from './decoder';
+import { DiscoveryClient } from './discovery';
 import { JsonPacket } from './packet';
 import { ActionConsumer } from './streams';
 
@@ -17,11 +18,35 @@ export function client({
   filepath,
   host,
   port,
+  discovery,
 }: {
   filepath: string;
   ignored?: any;
   host: string;
   port: number;
+  discovery: boolean;
+}) {
+  if (discovery) {
+    const discovery = new DiscoveryClient();
+    discovery.start();
+
+    discovery.once('found', (host: string) => {
+      connect({ host, port, filepath });
+      discovery.stop();
+    });
+  } else {
+    connect({ host, port, filepath });
+  }
+}
+
+function connect({
+  host,
+  port,
+  filepath,
+}: {
+  host: string;
+  port: number;
+  filepath: string;
 }) {
   const socket = new Socket();
   socket.connect(port, host, () => {

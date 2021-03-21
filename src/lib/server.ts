@@ -6,6 +6,7 @@ import { Readable } from 'stream';
 
 import { watch } from 'chokidar';
 
+import { DiscoveryServer } from './discovery';
 import { JsonPacket, PacketType } from './packet';
 import { HeaderStream, JsonStream } from './streams';
 
@@ -14,14 +15,21 @@ export async function server({
   ignored,
   host,
   port,
+  discovery
 }: {
   filepath: string;
   ignored?: any;
   host: string;
   port: number;
+  discovery: boolean
 }) {
   const server = new Server(host, port);
   server.start();
+
+  if (discovery) {
+    const discovery = new DiscoveryServer();
+    discovery.start();
+  }
 
   const watcher = watch(filepath, { ignored, alwaysStat: true });
 

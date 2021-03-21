@@ -27,4 +27,3 @@ The server will send commands to client on changes in server directory.
 ## What needs to be done
 * Check whether all files are synced on client connection.
 * Add ignore
-* Add discovery

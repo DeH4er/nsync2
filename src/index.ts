@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 
-import { parseArgs } from './args';
+import { parseArgs } from './lib/args';
 import { client } from './lib/client';
 import { server } from './lib/server';
 
@@ -23,11 +23,13 @@ if (args.server) {
     filepath: getFilePath(),
     port: args.port,
     host: args.host,
+    discovery: args.discovery,
   });
 } else {
   client({
     filepath: getFilePath(),
     port: args.port,
     host: args.host,
+    discovery: args.discovery,
   });
 }

@@ -6,11 +6,13 @@ export function parseArgs() {
       server: ['s'],
       host: ['h'],
       port: ['p'],
+      discovery: ['d'],
     },
-    boolean: ['s'],
+    boolean: ['s', 'd'],
     default: {
       host: '0.0.0.0',
       port: 4255,
+      discovery: true
     },
   });
 }
