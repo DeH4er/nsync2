@@ -56,8 +56,13 @@ export async function server({
   await once(watcher, 'ready');
   console.log('Watcher ready');
 
-  watcher.on('add', (path: string) => {
-    server.sendJson({ action: 'add-file', path });
+  watcher.on('add', (path: string, stats: Stats) => {
+    if (stats.size === 0) {
+      server.sendJson({ action: 'add-file', path });
+    } else {
+      server.sendJson({ action: 'write-file', path });
+      server.sendFile(path, stats.size);
+    }
   });
 
   watcher.on('change', async (path: string, stats: Stats) => {
